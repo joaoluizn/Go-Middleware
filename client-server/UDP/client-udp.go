@@ -9,7 +9,7 @@ import (
 
 func main() {
     // Dial to specified Socket
-    conn, _ := net.Dial("tcp", "127.0.0.1:9067")
+    conn, _ := net.Dial("udp", "127.0.0.1:9067")
     for {
         // Receive input
         reader := bufio.NewReader(os.Stdin)
@@ -19,7 +19,7 @@ func main() {
         // Send response to socket
         fmt.Fprintf(conn, text + "\n")
 
-            // Wait Reply from Server 1
+        // Wait Reply from Server 1
         message, _ := bufio.NewReader(conn).ReadString('\n')
         fmt.Println("Result: " + message)
     }
