@@ -1,2 +1,2 @@
 # Go-Middleware
-Exercises in Go from Middleware class
+Go scripts from Middleware class
