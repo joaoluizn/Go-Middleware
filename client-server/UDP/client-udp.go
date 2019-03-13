@@ -9,7 +9,13 @@ import (
 
 func main() {
     // Dial to specified Socket
-    conn, _ := net.Dial("udp", "127.0.0.1:9067")
+    ServerAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:9067")
+	CheckError(err)
+
+	LocalAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
+	CheckError(err)
+
+    conn, _ := net.DialUDP("udp", LocalAddr, ServerAddr)
     for {
         // Receive input
         reader := bufio.NewReader(os.Stdin)
@@ -23,4 +29,10 @@ func main() {
         message, _ := bufio.NewReader(conn).ReadString('\n')
         fmt.Println("Result: " + message)
     }
+}
+
+func CheckError(err error) {
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
 }

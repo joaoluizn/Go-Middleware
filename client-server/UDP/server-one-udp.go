@@ -14,12 +14,18 @@ func main() {
     fmt.Println("Starting Server - INTERCEPTOR")
     fmt.Println("Waiting Client Choice")
 
+    ServerAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:9068")
+	CheckError(err)
+
+	LocalAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
+	CheckError(err)
+
     // Listen to Port
     addr1 := net.UDPAddr{IP:net.ParseIP("127.0.0.1"),Port:9067}
     // Listen to specific Socket - UDP
     conn, _ := net.ListenUDP(protocol, &addr1)
     // Dial to Server 2
-    conn_brain, _ := net.Dial(protocol, "127.0.0.1:9068")
+    conn_brain, _ := net.DialUDP(protocol, LocalAddr, ServerAddr)
 
     // Infinity Loop
     for {
@@ -105,4 +111,10 @@ func LoseMessageBuilder(user_choice, brain_choice string) string{
 func WinMessageBuilder(user_choice, brain_choice string) string{
 	fmt.Println("User Win!" + " <" + user_choice + " vs " + brain_choice + ">")
 	return "You Win!" + " User > " + user_choice + " vs " + brain_choice + " < Brain"
+}
+
+func CheckError(err error) {
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
 }
