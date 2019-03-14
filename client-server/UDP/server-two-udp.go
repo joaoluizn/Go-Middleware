@@ -21,6 +21,7 @@ func main() {
 	// Generate Random seed
 	rand.Seed(time.Now().Unix())
 	conn, _ := net.ListenUDP("udp", &addr2)
+	defer conn.Close()
 
 	// Infinity Loop
   	for {

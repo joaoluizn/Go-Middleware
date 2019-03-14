@@ -16,6 +16,8 @@ func main() {
 	CheckError(err)
 
     conn, _ := net.DialUDP("udp", LocalAddr, ServerAddr)
+    defer conn.Close()
+
     for {
         // Receive input
         reader := bufio.NewReader(os.Stdin)

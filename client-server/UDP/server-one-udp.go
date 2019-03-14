@@ -27,6 +27,8 @@ func main() {
     // Dial to Server 2
     conn_brain, _ := net.DialUDP(protocol, LocalAddr, ServerAddr)
 
+    defer conn.Close()
+    defer conn_brain.Close()
     // Infinity Loop
     for {
         // Listen for message to process and write to buffer

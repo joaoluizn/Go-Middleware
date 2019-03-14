@@ -10,6 +10,7 @@ import (
 func main() {
     // Dial to specified Socket
     conn, _ := net.Dial("tcp", "127.0.0.1:9067")
+    defer conn.Close()
     for {
         // Receive input
         reader := bufio.NewReader(os.Stdin)

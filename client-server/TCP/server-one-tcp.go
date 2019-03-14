@@ -20,6 +20,9 @@ func main() {
     // Dial to Server 2
     conn_brain, _ := net.Dial(protocol, "127.0.0.1:9068")
 
+    defer conn.Close()
+    defer conn_brain.Close()
+    
     // Infinity Loop
     for {
         // Listen for message to process with newline
