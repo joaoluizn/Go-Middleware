@@ -16,7 +16,7 @@ func main() {
 		"p",
 		"s",
 		"p",
-		"r"
+		"r",
 	)
 	// Generate Random seed
 	rand.Seed(time.Now().Unix())

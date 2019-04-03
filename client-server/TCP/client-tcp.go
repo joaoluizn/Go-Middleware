@@ -6,11 +6,12 @@ import (
     "bufio"
     "os"
     "time"
-    "math/rand"
 )
 
 func main() {
     var i int
+
+    fmt.Printf("How many times it will be executed?")
     _, err := fmt.Scanf("%d", &i)
 
     fmt.Printf("%d\n", i)
@@ -19,7 +20,7 @@ func main() {
     choices = append(choices,
         "r",
         "p",
-        "s"
+        "s",
     )
 
     f, err := os.Create(fmt.Sprintf("%dtcp.txt",i))

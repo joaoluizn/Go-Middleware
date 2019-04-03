@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-userWins := 0
-compWins :=0
+var userWins int = 0
+var compWins int =0
 
 func main() {
     protocol := "tcp"
