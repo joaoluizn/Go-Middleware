@@ -15,6 +15,8 @@ func main() {
 		"r",
 		"p",
 		"s",
+		"p",
+		"r"
 	)
 	// Generate Random seed
 	rand.Seed(time.Now().Unix())
@@ -23,11 +25,13 @@ func main() {
   	// Accepting connection
   	conn, _ := ln.Accept()
   	// Infinity Loop
+  	i := 0
   	for {
     	message, _ := bufio.NewReader(conn).ReadString('\n')
 		fmt.Print("Message Received: ", string(message))
 		// Random choice
-    	newmessage := string(choices[rand.Intn(len(choices))])
+    	newmessage := string(choices[i%5])
     	conn.Write([]byte(newmessage + "\n"))
+    	i++;
   	}
 }

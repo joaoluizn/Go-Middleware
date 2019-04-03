@@ -19,7 +19,7 @@ func main() {
     choices = append(choices,
         "r",
         "p",
-        "s",
+        "s"
     )
 
     f, err := os.Create(fmt.Sprintf("%dtcp.txt",i))
@@ -33,7 +33,7 @@ func main() {
 
     for j :=0; j<i; j++{
         // Receive input
-        text := string(choices[rand.Intn(len(choices))])
+        text := string(choices[j%3])
 
         start := time.Now()
 

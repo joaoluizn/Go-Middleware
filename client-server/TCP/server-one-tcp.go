@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+userWins := 0
+compWins :=0
+
 func main() {
     protocol := "tcp"
 
@@ -93,15 +96,19 @@ func ValidateUserChoice(choice string) bool{
 
 func DrawMessageBuilder(user_choice, brain_choice string) string{
 	fmt.Println("It's a Draw!" + " <" + user_choice + " vs " + brain_choice + ">")
+    userWins++
+    compWins++
 	return "It's a Draw!" + " User > " + user_choice + " vs " + brain_choice + " < Brain"
 }
 
 func LoseMessageBuilder(user_choice, brain_choice string) string{
 	fmt.Println("User Loses!" + " <" + user_choice + " vs " + brain_choice + ">")
+    compWins++
 	return "You Lose!" + " User > " + user_choice + " vs " + brain_choice + " < Brain"
 }
 
 func WinMessageBuilder(user_choice, brain_choice string) string{
 	fmt.Println("User Win!" + " <" + user_choice + " vs " + brain_choice + ">")
+    userWins++
 	return "You Win!" + " User > " + user_choice + " vs " + brain_choice + " < Brain"
 }
