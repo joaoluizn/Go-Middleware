@@ -1,44 +1,119 @@
 package main
 
 import (
-	"fmt"
-	"net"
-	"bufio"
-	"strings"
+    "fmt"
+    "strings"
+    "github.com/streadway/amqp"
 )
+
+func failOnError(err error, msg string) {
+    if err != nil {
+        fmt.Printf("%s: %s", msg, err)
+    }
+}
 
 var userWins int = 0
 var compWins int =0
 
 func main() {
-    protocol := "tcp"
 
     fmt.Println("Starting Server - INTERCEPTOR")
     fmt.Println("Waiting Client Choice")
 
-    // Listen to Port
-    ln, _ := net.Listen(protocol, ":9067")
-    // Accepting connection
-    conn, _ := ln.Accept()
-    // Dial to Server 2
-    conn_brain, _ := net.Dial(protocol, "127.0.0.1:9068")
+    conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+    failOnError(err, "Failed to connect to RabbitMQ")
+    defer conn.Close()
+
+    chSend, err := conn.Channel()
+    failOnError(err, "Failed to open a channel")
+    defer chSend.Close()
+
+    qSend, err := chSend.QueueDeclare(
+        "server-1", // name
+        false,   // durable
+        false,   // delete when unused
+        false,   // exclusive
+        false,   // no-wait
+        nil,     // arguments
+    )
+    failOnError(err, "Failed to declare a queue")
+
+
+    chReceive1, err := conn.Channel()
+    failOnError(err, "Failed to open a channel")
+    defer chReceive1.Close()
+
+    qReceive1, err := chReceive1.QueueDeclare(
+        "client", // name
+        false,   // durable
+        false,   // delete when unused
+        false,   // exclusive
+        false,   // no-wait
+        nil,     // arguments
+    )
+    failOnError(err, "Failed to declare a queue")
+
+    chReceive2, err := conn.Channel()
+    failOnError(err, "Failed to open a channel")
+    defer chReceive2.Close()
+
+    qReceive2, err := chReceive2.QueueDeclare(
+        "server-2", // name
+        false,   // durable
+        false,   // delete when unused
+        false,   // exclusive
+        false,   // no-wait
+        nil,     // arguments
+    )
+    failOnError(err, "Failed to declare a queue")    
+
 
     // Infinity Loop
     for {
+        message := "";
+
         // Listen for message to process with newline
-        message, _ := bufio.NewReader(conn).ReadString('\n')
+         msgs, err := chReceive1.Consume(
+            qReceive1.Name, // queue
+            "",     // consumer
+            true,   // auto-ack
+            false,  // exclusive
+            false,  // no-local
+            false,  // no-wait
+            nil,    // args
+        )
+        failOnError(err, "Failed to register a consumer")
+            
+        for d := range msgs{
+            message = string(d.Body)
+        }
+
         user_choice := Choice(strings.TrimSuffix(message, "\n"))
         valid_input := ValidateUserChoice(user_choice)
         
         if valid_input{
             // Request choice to BRAIN
-            fmt.Fprintf(conn_brain, "Waiting Brain Choice" + "\n")
+            fmt.Printf("Waiting Brain Choice" + "\n")
             
             // Receiving BRAIN choice
-            brain_message, _ := bufio.NewReader(conn_brain).ReadString('\n')
-            brain_choice := Choice(strings.TrimSuffix(brain_message, "\n"))
-            client_response := "Result"
+            msgs, err := chReceive2.Consume(
+                qReceive2.Name, // queue
+                "",     // consumer
+                true,   // auto-ack
+                false,  // exclusive
+                false,  // no-local
+                false,  // no-wait
+                nil,    // args
+            )
+            failOnError(err, "Failed to register a consumer")
 
+            brain_choice := ""
+
+            for d := range msgs{
+                brain_choice = string(d.Body)
+            }
+
+            client_response := ""
             // Calculate Winner
             if strings.EqualFold(user_choice, brain_choice){
                 client_response = DrawMessageBuilder(user_choice, brain_choice)
@@ -65,9 +140,28 @@ func main() {
                 }
 
             }
-            conn.Write([]byte(client_response + "\n"))
+            err = chSend.Publish(
+                "",     // exchange
+                qSend.Name, // routing key
+                false,  // mandatory
+                false,  // immediate
+                amqp.Publishing{
+                ContentType: "text/plain",
+                Body:        []byte(client_response),
+            })
+            failOnError(err, "Failed to publish a message")
+
         }else{
-            conn.Write([]byte("Sorry, Don't know this input, try: R, P or S" + "\n"))
+            err = chSend.Publish(
+                "",     // exchange
+                qSend.Name, // routing key
+                false,  // mandatory
+                false,  // immediate
+                amqp.Publishing{
+                ContentType: "text/plain",
+                Body:        []byte("Sorry, Don't know this input, try: R, P or S" + "\n"),
+            })
+            failOnError(err, "Failed to publish a message")
         }
     }
 }
