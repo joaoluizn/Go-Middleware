@@ -46,7 +46,7 @@ func main() {
     defer chReceive.Close()
 
     qReceive, err := chReceive.QueueDeclare(
-        "server-1", // name
+        "server-1-server-2", // name
         false,   // durable
         false,   // delete when unused
         false,   // exclusive

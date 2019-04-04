@@ -24,12 +24,12 @@ func main() {
     failOnError(err, "Failed to connect to RabbitMQ")
     defer conn.Close()
 
-    chSend, err := conn.Channel()
+    chSend1, err := conn.Channel()
     failOnError(err, "Failed to open a channel")
-    defer chSend.Close()
+    defer chSend1.Close()
 
-    qSend, err := chSend.QueueDeclare(
-        "server-1", // name
+    qSend1, err := chSend1.QueueDeclare(
+        "server-1-client", // name
         false,   // durable
         false,   // delete when unused
         false,   // exclusive
@@ -38,6 +38,19 @@ func main() {
     )
     failOnError(err, "Failed to declare a queue")
 
+    chSend2, err := conn.Channel()
+    failOnError(err, "Failed to open a channel")
+    defer chSend2.Close()
+
+    qSend2, err := chSend1.QueueDeclare(
+        "server-1-server-2", // name
+        false,   // durable
+        false,   // delete when unused
+        false,   // exclusive
+        false,   // no-wait
+        nil,     // arguments
+    )
+    failOnError(err, "Failed to declare a queue")
 
     chReceive1, err := conn.Channel()
     failOnError(err, "Failed to open a channel")
@@ -93,7 +106,16 @@ func main() {
         
         if valid_input{
             // Request choice to BRAIN
-            fmt.Printf("Waiting Brain Choice" + "\n")
+            err = chSend2.Publish(
+                "",     // exchange
+                qSend2.Name, // routing key
+                false,  // mandatory
+                false,  // immediate
+                amqp.Publishing{
+                ContentType: "text/plain",
+                Body:        []byte("request"),
+            })
+            failOnError(err, "Failed to publish a message")
             
             // Receiving BRAIN choice
             msgs, err := chReceive2.Consume(
@@ -140,9 +162,9 @@ func main() {
                 }
 
             }
-            err = chSend.Publish(
+            err = chSend1.Publish(
                 "",     // exchange
-                qSend.Name, // routing key
+                qSend1.Name, // routing key
                 false,  // mandatory
                 false,  // immediate
                 amqp.Publishing{
@@ -152,9 +174,9 @@ func main() {
             failOnError(err, "Failed to publish a message")
 
         }else{
-            err = chSend.Publish(
+            err = chSend1.Publish(
                 "",     // exchange
-                qSend.Name, // routing key
+                qSend1.Name, // routing key
                 false,  // mandatory
                 false,  // immediate
                 amqp.Publishing{
