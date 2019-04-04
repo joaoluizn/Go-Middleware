@@ -101,7 +101,7 @@ func main() {
 
 	// go func() {
 		for d := range msgs{
-			log.Printf(">> Received: %s", string(d.Body))
+			log.Printf(">> Your Opponent chose: %s", string(d.Body))
 			elapsed := time.Since(start)
 			f.WriteString(fmt.Sprintf("%f\n",elapsed))	
 		}

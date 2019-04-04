@@ -31,7 +31,7 @@ func main() {
 
 	// Start Client Handler
 	q, err := ch.QueueDeclare(
-		"server.two", // name
+		"server.one", // name
 		false,   // durable
 		false,   // delete when unused
 		false,   // exclusive
@@ -42,7 +42,7 @@ func main() {
 
 	// Start Client Handler
 	sender_q, err := ch.QueueDeclare(
-		"response-s2", // name
+		"response-s1", // name
 		false,   // durable
 		false,   // delete when unused
 		false,   // exclusive
@@ -66,12 +66,11 @@ func main() {
 	i := 0
 
 	forever := make(chan bool)
-
 	go func() {
 		for d := range msgs {
 			log.Printf("Received a message: %s", d.Body)
 			newmessage := string(choices[i%5])
-			// i+= 1
+			i+= 1
 
 			err = ch.Publish(
 				"",     // exchange
@@ -82,7 +81,7 @@ func main() {
 					ContentType: "text/plain",
 					Body:        []byte(newmessage),
 				})
-			log.Printf(">> Enviando Escolha: %s from %s", newmessage, d.Body)
+			log.Printf(">> Enviando Escolha: %s para %s", newmessage, d.Body)
 		}
 	}()
 

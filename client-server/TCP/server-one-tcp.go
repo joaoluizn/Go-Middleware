@@ -3,12 +3,13 @@ package main
 import (
     "fmt"
     "strings"
+    "log"
     "github.com/streadway/amqp"
 )
 
 func failOnError(err error, msg string) {
     if err != nil {
-        fmt.Printf("%s: %s", msg, err)
+        log.Printf("%s: %s", msg, err)
     }
 }
 
@@ -24,12 +25,12 @@ func main() {
     failOnError(err, "Failed to connect to RabbitMQ")
     defer conn.Close()
 
-    chSend, err := conn.Channel()
+    ch, err := conn.Channel()
     failOnError(err, "Failed to open a channel")
-    defer chSend.Close()
+    defer ch.Close()
 
-    qSend, err := chSend.QueueDeclare(
-        "server-1", // name
+    receive_one_q, err := ch.QueueDeclare(
+        "server.one", // name
         false,   // durable
         false,   // delete when unused
         false,   // exclusive
@@ -38,13 +39,8 @@ func main() {
     )
     failOnError(err, "Failed to declare a queue")
 
-
-    chReceive1, err := conn.Channel()
-    failOnError(err, "Failed to open a channel")
-    defer chReceive1.Close()
-
-    qReceive1, err := chReceive1.QueueDeclare(
-        "client", // name
+    response_one_q, err := ch.QueueDeclare(
+        "response-s1", // name
         false,   // durable
         false,   // delete when unused
         false,   // exclusive
@@ -53,63 +49,87 @@ func main() {
     )
     failOnError(err, "Failed to declare a queue")
 
-    chReceive2, err := conn.Channel()
-    failOnError(err, "Failed to open a channel")
-    defer chReceive2.Close()
-
-    qReceive2, err := chReceive2.QueueDeclare(
-        "server-2", // name
+    send_two_q, err := ch.QueueDeclare(
+        "server.two", // name
         false,   // durable
         false,   // delete when unused
         false,   // exclusive
         false,   // no-wait
         nil,     // arguments
     )
-    failOnError(err, "Failed to declare a queue")    
+    failOnError(err, "Failed to declare a queue")
 
+    receive_two_q, err := ch.QueueDeclare(
+        "response-s2", // name
+        false,   // durable
+        false,   // delete when unused
+        false,   // exclusive
+        false,   // no-wait
+        nil,     // arguments
+    )
+    failOnError(err, "Failed to declare a queue")
+
+    // Listen from client
+    msgs_one, err := ch.Consume(
+        receive_one_q.Name, // queue
+        "",     // consumer
+        true,   // auto-ack
+        false,  // exclusive
+        false,  // no-local
+        false,  // no-wait
+        nil,    // args
+    )
+    failOnError(err, "Failed to register a consumer")
+        
+    // Listen from server two
+    msgs_two, err := ch.Consume(
+        receive_two_q.Name, // queue
+        "",     // consumer
+        true,   // auto-ack
+        false,  // exclusive
+        false,  // no-local
+        false,  // no-wait
+        nil,    // args
+    )
+    failOnError(err, "Failed to register a consumer")
 
     // Infinity Loop
-    for {
+    forever := make(chan bool)
+
+    go func() {
         message := "";
 
-        // Listen for message to process with newline
-         msgs, err := chReceive1.Consume(
-            qReceive1.Name, // queue
-            "",     // consumer
-            true,   // auto-ack
-            false,  // exclusive
-            false,  // no-local
-            false,  // no-wait
-            nil,    // args
-        )
-        failOnError(err, "Failed to register a consumer")
-            
-        for d := range msgs{
+        for d := range msgs_one{
             message = string(d.Body)
+            log.Printf(d., "recebi")
+            // user_choice := Choice(strings.TrimSuffix(message, "\n"))
+            // valid_input := ValidateUserChoice(user_choice)
+            // Toda logica precisaria ser feita aqui para poder receber cada dado da queue
+            // ou seja, uma hora ia precisar rodar outro for para receber da queue do server 2
+            // não consigo visualizar como resolver. 
         }
+
+        log.Printf("Passo aq?")
 
         user_choice := Choice(strings.TrimSuffix(message, "\n"))
         valid_input := ValidateUserChoice(user_choice)
         
         if valid_input{
             // Request choice to BRAIN
-            fmt.Printf("Waiting Brain Choice" + "\n")
-            
-            // Receiving BRAIN choice
-            msgs, err := chReceive2.Consume(
-                qReceive2.Name, // queue
-                "",     // consumer
-                true,   // auto-ack
-                false,  // exclusive
-                false,  // no-local
-                false,  // no-wait
-                nil,    // args
-            )
-            failOnError(err, "Failed to register a consumer")
-
+            log.Printf("Waiting Brain Choice" + "\n")
             brain_choice := ""
 
-            for d := range msgs{
+            err = ch.Publish(
+                "",     // exchange
+                send_two_q.Name, // routing key
+                false,  // mandatory
+                false,  // immediate
+                amqp.Publishing{
+                ContentType: "text/plain",
+                Body:        []byte("Your Turn"),
+            })
+
+            for d := range msgs_two{
                 brain_choice = string(d.Body)
             }
 
@@ -140,9 +160,9 @@ func main() {
                 }
 
             }
-            err = chSend.Publish(
+            err = ch.Publish(
                 "",     // exchange
-                qSend.Name, // routing key
+                response_one_q.Name, // routing key
                 false,  // mandatory
                 false,  // immediate
                 amqp.Publishing{
@@ -152,9 +172,9 @@ func main() {
             failOnError(err, "Failed to publish a message")
 
         }else{
-            err = chSend.Publish(
+            err = ch.Publish(
                 "",     // exchange
-                qSend.Name, // routing key
+                response_one_q.Name, // routing key
                 false,  // mandatory
                 false,  // immediate
                 amqp.Publishing{
@@ -163,7 +183,9 @@ func main() {
             })
             failOnError(err, "Failed to publish a message")
         }
-    }
+    }()
+	<-forever
+
 }
 
 func Choice(a string) string{
