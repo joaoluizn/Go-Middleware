@@ -91,6 +91,7 @@ func main() {
 			amqp.Publishing{
 				ContentType: "text/plain",
 				Body:        []byte(body),
+				MessageId: "client",
 			})
 
 		log.Printf(" [x] Sent %s", body)

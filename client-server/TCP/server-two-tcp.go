@@ -14,11 +14,11 @@ func failOnError(err error, msg string) {
 func main() {
 	choices := make([]string, 0)
 	choices = append(choices,
-		"r",
-		"p",
-		"s",
-		"p",
-		"r",
+		"Rock",
+		"Paper",
+		"Scissor",
+		"Paper",
+		"Rock",
 	)
 
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
@@ -42,7 +42,7 @@ func main() {
 
 	// Start Client Handler
 	sender_q, err := ch.QueueDeclare(
-		"response-s2", // name
+		"server.one", // name
 		false,   // durable
 		false,   // delete when unused
 		false,   // exclusive
@@ -73,7 +73,7 @@ func main() {
 		for d := range msgs {
 			log.Printf("Received a message: %s", d.Body)
 			newmessage := string(choices[i%5])
-			// i+= 1
+			i+= 1
 
 			err = ch.Publish(
 				"",     // exchange
@@ -83,6 +83,7 @@ func main() {
 				amqp.Publishing{
 					ContentType: "text/plain",
 					Body:        []byte(newmessage),
+					MessageId: "server",
 				})
 			log.Printf(">> Enviando Escolha: %s from %s", newmessage, d.Body)
 		}

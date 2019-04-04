@@ -60,16 +60,6 @@ func main() {
     )
     failOnError(err, "Failed to declare a queue")
 
-    receive_two_q, err := ch.QueueDeclare(
-        "response-s2", // name
-        false,   // durable
-        false,   // delete when unused
-        false,   // exclusive
-        false,   // no-wait
-        nil,     // arguments
-    )
-    failOnError(err, "Failed to declare a queue")
-
     // Listen from client
     msgs_one, err := ch.Consume(
         receive_one_q.Name, // queue
@@ -81,109 +71,98 @@ func main() {
         nil,    // args
     )
     failOnError(err, "Failed to register a consumer")
-        
-    // Listen from server two
-    msgs_two, err := ch.Consume(
-        receive_two_q.Name, // queue
-        "",     // consumer
-        true,   // auto-ack
-        false,  // exclusive
-        false,  // no-local
-        false,  // no-wait
-        nil,    // args
-    )
-    failOnError(err, "Failed to register a consumer")
+
 
     // Infinity Loop
     forever := make(chan bool)
 
     go func() {
         message := "";
+        var user_choice string = ""
+        var brain_choice string = ""
 
         for d := range msgs_one{
             message = string(d.Body)
-            // user_choice := Choice(strings.TrimSuffix(message, "\n"))
-            // valid_input := ValidateUserChoice(user_choice)
-            // Toda logica precisaria ser feita aqui para poder receber cada dado da queue
-            // ou seja, uma hora ia precisar rodar outro for para receber da queue do server 2
-            // não consigo visualizar como resolver. 
-        }
+            messageType := string(d.MessageId)
+            
+            log.Printf("Messagem: %s & type: %s", message, messageType)
+            if strings.Contains(messageType, "client"){
+                log.Printf("Log de Client")
+                user_choice = Choice(strings.TrimSuffix(message, "\n"))
+                valid_input := ValidateUserChoice(user_choice)
 
-        // Codigo não passa daqui, fica preso no for de cima.
-        // Tudo isso precisa ir para dentor do for, toda logica aq em baixo ja está correta dos canais
-        // mas precisaria mudar a forma de pegar o dado do BRAIN, senão ficaria for de for e n rolaria.
-        user_choice := Choice(strings.TrimSuffix(message, "\n"))
-        valid_input := ValidateUserChoice(user_choice)
-        
-        if valid_input{
-            // Request choice to BRAIN
-            log.Printf("Waiting Brain Choice" + "\n")
-            brain_choice := ""
+                if valid_input{
+                    user_choice = Choice(strings.TrimSuffix(message, "\n"))
 
-            err = ch.Publish(
-                "",     // exchange
-                send_two_q.Name, // routing key
-                false,  // mandatory
-                false,  // immediate
-                amqp.Publishing{
-                ContentType: "text/plain",
-                Body:        []byte("Your Turn"),
-            })
-
-            for d := range msgs_two{
-                brain_choice = string(d.Body)
-            }
-
-            client_response := ""
-            // Calculate Winner
-            if strings.EqualFold(user_choice, brain_choice){
-                client_response = DrawMessageBuilder(user_choice, brain_choice)
-
-            }else if strings.EqualFold(user_choice, "Rock"){
-                if strings.EqualFold(brain_choice, "Scissor"){
-                    client_response = WinMessageBuilder(user_choice, brain_choice)
+                    err = ch.Publish(
+                        "",     // exchange
+                        send_two_q.Name, // routing key
+                        false,  // mandatory
+                        false,  // immediate
+                        amqp.Publishing{
+                        ContentType: "text/plain",
+                        Body:        []byte("Your Turn"),
+                    })
                 }else{
-                    client_response = LoseMessageBuilder(user_choice, brain_choice)
+                    err = ch.Publish(
+                        "",     // exchange
+                        response_one_q.Name, // routing key
+                        false,  // mandatory
+                        false,  // immediate
+                        amqp.Publishing{
+                        ContentType: "text/plain",
+                        Body:        []byte("Sorry, Don't know this input, try: R, P or S" + "\n"),
+                    })
+                    failOnError(err, "Failed to publish a message")
                 }
-
-            }else if strings.EqualFold(user_choice, "Paper"){
-                if strings.EqualFold(brain_choice, "Rock"){
-                    client_response = WinMessageBuilder(user_choice, brain_choice)
-                }else{
-                    client_response = LoseMessageBuilder(user_choice, brain_choice)
-                }
-
             }else{
-                if strings.EqualFold(brain_choice, "Paper"){
-                    client_response = WinMessageBuilder(user_choice, brain_choice)
+                // Request choice to BRAIN
+                log.Printf("Waiting Brain Choice" + "\n")
+        
+                log.Printf("brain_chose: %s", message)
+                brain_choice = message
+                client_response := ""
+                // Calculate Winner
+                if strings.EqualFold(user_choice, brain_choice){
+                    client_response = DrawMessageBuilder(user_choice, brain_choice)
+
+                }else if strings.EqualFold(user_choice, "Rock"){
+                    if strings.EqualFold(brain_choice, "Scissor"){
+                        client_response = WinMessageBuilder(user_choice, brain_choice)
+                    }else{
+                        client_response = LoseMessageBuilder(user_choice, brain_choice)
+                    }
+
+                }else if strings.EqualFold(user_choice, "Paper"){
+                    if strings.EqualFold(brain_choice, "Rock"){
+                        client_response = WinMessageBuilder(user_choice, brain_choice)
+                    }else{
+                        client_response = LoseMessageBuilder(user_choice, brain_choice)
+                    }
+
                 }else{
-                    client_response = LoseMessageBuilder(user_choice, brain_choice)
+                    if strings.EqualFold(brain_choice, "Paper"){
+                        client_response = WinMessageBuilder(user_choice, brain_choice)
+                    }else{
+                        client_response = LoseMessageBuilder(user_choice, brain_choice)
+                    }
+
                 }
-
+                err = ch.Publish(
+                    "",     // exchange
+                    response_one_q.Name, // routing key
+                    false,  // mandatory
+                    false,  // immediate
+                    amqp.Publishing{
+                    ContentType: "text/plain",
+                    Body:        []byte(client_response),
+                })
+                failOnError(err, "Failed to publish a message")
+                
             }
-            err = ch.Publish(
-                "",     // exchange
-                response_one_q.Name, // routing key
-                false,  // mandatory
-                false,  // immediate
-                amqp.Publishing{
-                ContentType: "text/plain",
-                Body:        []byte(client_response),
-            })
-            failOnError(err, "Failed to publish a message")
 
-        }else{
-            err = ch.Publish(
-                "",     // exchange
-                response_one_q.Name, // routing key
-                false,  // mandatory
-                false,  // immediate
-                amqp.Publishing{
-                ContentType: "text/plain",
-                Body:        []byte("Sorry, Don't know this input, try: R, P or S" + "\n"),
-            })
-            failOnError(err, "Failed to publish a message")
         }
+
     }()
 	<-forever
 
