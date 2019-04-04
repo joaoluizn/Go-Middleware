@@ -23,10 +23,10 @@ func (a *API) Jokenpo(item Item, reply *string) error{
 	computer_moves := Item{"Rock", "Scissor", "Paper"}
 	
 	//PRIMEIRO ROUND
-	fmt.Println("First round:\nYou: " + computer_moves.First_round + "\nComputer: Rock")
-	if computer_moves.First_round=="Rock"{
+	fmt.Println("First round:\nYou: " + item.First_round + "\nComputer: Rock")
+	if item.First_round=="Rock"{
 		fmt.Println("Tie!")
-	}else if computer_moves.First_round=="Scissor"{
+	}else if item.First_round=="Scissor"{
 		fmt.Println("You Lose!")
 		count = count - 1
 	}else{
@@ -35,11 +35,11 @@ func (a *API) Jokenpo(item Item, reply *string) error{
 	}
 
 	//SEGUNDO ROUND
-	fmt.Println("Second round:\nYou: " + computer_moves.First_round + "\nComputer: Scissors")
-	if computer_moves.Second_round=="Rock"{
+	fmt.Println("Second round:\nYou: " + item.Second_round + "\nComputer: Scissors")
+	if item.Second_round=="Rock"{
 		fmt.Println("You Win !")
 		count = count + 1
-	}else if computer_moves.Second_round=="Scissor"{
+	}else if item.Second_round=="Scissor"{
 		fmt.Println("Tie!")
 	}else{
 		fmt.Println("You Lose!")
@@ -47,11 +47,11 @@ func (a *API) Jokenpo(item Item, reply *string) error{
 	}
 
 	//TERCEIRO ROUND
-	fmt.Println("Third round:\nYou: " + computer_moves.First_round + "\nComputer: Scissors")
-	if computer_moves.Third_round=="Rock"{
+	fmt.Println("Third round:\nYou: " + computer_moves.Third_round + "\nComputer: Scissors")
+	if item.Third_round=="Rock"{
 		fmt.Println("You Lose!")
 		count = count - 1
-	}else if computer_moves.Third_round=="Scissor"{
+	}else if item.Third_round=="Scissor"{
 		fmt.Println("You Win!")
 		count = count + 1
 	}else{
@@ -61,11 +61,11 @@ func (a *API) Jokenpo(item Item, reply *string) error{
 	var retorno string
 
 	if count > 0 {
-		retorno = "Voce venceu!"
+		retorno = "Winner!"
 	}else if count == 0{
-		retorno = "voce perdeu"
+		retorno = "Loser!"
 	}else{
-		retorno = "EMPATE"
+		retorno = "Draw!"
 	}
 
 	*reply = retorno

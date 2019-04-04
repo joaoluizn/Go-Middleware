@@ -1,10 +1,10 @@
 package main
 
 import(
-	
+	"fmt"
 	"log"
 	"net/rpc"
-	"fmt"
+	
 )
 
 type Item struct{
@@ -14,7 +14,7 @@ type Item struct{
 }
 
 func main(){
-	var reply Item
+	var reply string
 
 	client, err := rpc.DialHTTP("tcp","localhost:4040")
 	if err != nil {
@@ -24,5 +24,7 @@ func main(){
 	player_moves := Item{"Scissors", "Rock", "Rock"}
 
 	client.Call("API.Jokenpo", player_moves, &reply)
+
+	fmt.Println(reply)
 
 }
