@@ -52,6 +52,7 @@ func main() {
 	failOnError(err, "Failed to declare a queue")
 	
 
+
 	msgs, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
@@ -64,6 +65,7 @@ func main() {
 	failOnError(err, "Failed to register a consumer")
 	
 	i := 0
+
 
 	forever := make(chan bool)
 

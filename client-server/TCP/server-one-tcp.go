@@ -25,6 +25,7 @@ func main() {
     failOnError(err, "Failed to connect to RabbitMQ")
     defer conn.Close()
 
+
     ch, err := conn.Channel()
     failOnError(err, "Failed to open a channel")
     defer ch.Close()
@@ -101,7 +102,6 @@ func main() {
 
         for d := range msgs_one{
             message = string(d.Body)
-            log.Printf(d., "recebi")
             // user_choice := Choice(strings.TrimSuffix(message, "\n"))
             // valid_input := ValidateUserChoice(user_choice)
             // Toda logica precisaria ser feita aqui para poder receber cada dado da queue
