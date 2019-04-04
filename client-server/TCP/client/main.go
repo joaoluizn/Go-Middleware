@@ -4,7 +4,7 @@ import(
 	"fmt"
 	"log"
 	"net/rpc"
-	
+	"time"
 )
 
 type Item struct{
@@ -14,6 +14,8 @@ type Item struct{
 }
 
 func main(){
+	start := time.Now()
+
 	var reply string
 
 	client, err := rpc.DialHTTP("tcp","localhost:4040")
@@ -27,4 +29,6 @@ func main(){
 
 	fmt.Println(reply)
 
+	duration := time.Since(start)
+	fmt.Println("\nDesempenho: ",duration )
 }
