@@ -160,7 +160,6 @@ func main() {
                 failOnError(err, "Failed to publish a message")
                 
             }
-
         }
 
     }()
