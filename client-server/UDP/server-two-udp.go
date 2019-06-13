@@ -1,17 +1,18 @@
 package main
 
 import (
-	"net"
 	"fmt"
 	"math/rand"
+	"net"
 	"time"
 )
 
+// main Server Two main function responsible for process random choice.
 func main() {
-    buf := make([]byte, 1024)
-	addr2 := net.UDPAddr{IP:net.ParseIP("127.0.0.1"),Port:9068}
+	buf := make([]byte, 1024)
+	addr2 := net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9068}
+
 	fmt.Println("Starting Server - BRAIN")
-	// Listen to Port
 	choices := make([]string, 0)
 	choices = append(choices,
 		"r",
@@ -20,17 +21,26 @@ func main() {
 	)
 	// Generate Random seed
 	rand.Seed(time.Now().Unix())
-	conn, _ := net.ListenUDP("udp", &addr2)
+	conn, err := net.ListenUDP("udp", &addr2)
+
+	checkError(err)
 	defer conn.Close()
 
-	// Infinity Loop
-  	for {
-		_, remoteaddr, _ := conn.ReadFromUDP(buf)
-		fmt.Print("Message Received: ", string(buf))
-		// Random choice
-		brain_choice := string(choices[rand.Intn(len(choices))])
-		fmt.Print("Choice: ", brain_choice + "\n")
+	for {
+		_, remoteaddr, err := conn.ReadFromUDP(buf)
+		checkError(err)
 
-		conn.WriteToUDP([]byte(brain_choice + "\n"), remoteaddr)
-  	}
+		fmt.Print("Message Received: ", string(buf))
+
+		brainChoice := string(choices[rand.Intn(len(choices))])
+		fmt.Print("Random Brain Choice: ", brainChoice+"\n")
+
+		conn.WriteToUDP([]byte(brainChoice+"\n"), remoteaddr)
+	}
+}
+
+func checkError(err error) {
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
 }
