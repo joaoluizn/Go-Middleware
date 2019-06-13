@@ -14,18 +14,25 @@ func main() {
 	fmt.Println("Starting Server - INTERCEPTOR")
 	fmt.Println("Waiting Client Choice")
 
-	ln, _ := net.Listen(protocol, ":9067")
+	ln, err := net.Listen(protocol, ":9067")
+	checkError(err)
+
 	// Accepting connection
-	conn, _ := ln.Accept()
+	conn, err := ln.Accept()
+	checkError(err)
+
 	// Dial to Server 2
-	connBrain, _ := net.Dial(protocol, "127.0.0.1:9068")
+	connBrain, err := net.Dial(protocol, "127.0.0.1:9068")
+	checkError(err)
 
 	defer conn.Close()
 	defer connBrain.Close()
 
 	for {
 		// Listen for message to process with newline
-		message, _ := bufio.NewReader(conn).ReadString('\n')
+		message, err := bufio.NewReader(conn).ReadString('\n')
+		checkError(err)
+
 		userChoice := choice(strings.TrimSuffix(message, "\n"))
 		isInputValid := validateUserChoice(userChoice)
 
@@ -34,7 +41,9 @@ func main() {
 			fmt.Fprintf(connBrain, "Waiting Brain Choice"+"\n")
 
 			// Receiving BRAIN choice
-			brainMessage, _ := bufio.NewReader(connBrain).ReadString('\n')
+			brainMessage, err := bufio.NewReader(connBrain).ReadString('\n')
+			checkError(err)
+
 			brainChoice := choice(strings.TrimSuffix(brainMessage, "\n"))
 			clientResponse := "Result"
 
@@ -110,4 +119,11 @@ func loseMessageBuilder(userChoice, brainChoice string) string {
 func winMessageBuilder(userChoice, brainChoice string) string {
 	fmt.Println("User Win!" + " <" + userChoice + " vs " + brainChoice + ">")
 	return "You Win!" + " User > " + userChoice + " vs " + brainChoice + " < Brain"
+}
+
+// checkError Simple Error Handler
+func checkError(err error) {
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
 }

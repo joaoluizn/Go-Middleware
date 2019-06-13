@@ -21,19 +21,28 @@ func main() {
 	rand.Seed(time.Now().Unix())
 
 	// Listen to Port
-	ln, _ := net.Listen("tcp", ":9068")
+	ln, err := net.Listen("tcp", ":9068")
+	checkError(err)
 
 	// Accepting connection
-	conn, _ := ln.Accept()
+	conn, err := ln.Accept()
+	checkError(err)
 	defer conn.Close()
 
 	for {
-		message, _ := bufio.NewReader(conn).ReadString('\n')
+		message, err := bufio.NewReader(conn).ReadString('\n')
+		checkError(err)
 		fmt.Print("Message Received: ", string(message))
 
 		newMessage := string(choices[rand.Intn(len(choices))])
 		fmt.Print("Random Brain Choice: ", newMessage+"\n")
 
 		conn.Write([]byte(newMessage + "\n"))
+	}
+}
+
+func checkError(err error) {
+	if err != nil {
+		fmt.Println("Error: ", err)
 	}
 }
